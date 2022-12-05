@@ -1,0 +1,118 @@
+//#define BLYNK_PRINT Serial
+//#include <Wire.h> 
+//#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+#include <ESP8266WiFi.h>
+#include <StringSplitter.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
+
+#define BOTtoken        "1819002326:AAFsNRvao0HFNeh6gDf2CcPxXmXKJRP82ZI"
+
+SoftwareSerial mySerial(12,14); //RX, TX
+
+WiFiClientSecure client;    
+UniversalTelegramBot bot(BOTtoken, client);
+//LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+
+char ssid[] = "FAR";
+char pass[] = "faisal1305";
+
+
+
+int status1, status2;
+uint32_t tsLastTime = 0;
+
+String incomingByte;
+String buff[3]; //untuk menampung data serial array string
+
+int i= 0;
+int Bot_mtbs = 1000;
+long Bot_lasttime;
+
+
+void setup(){
+  // Debug console
+  Serial.begin(9600);
+  mySerial.begin(9600);
+  
+  //lcd.begin();
+  //lcd.print("Hello, world!");
+  delay(2000);
+  //lcd.clear();
+  
+  Serial.print("Connecting Wifi: ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, pass);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+  
+  client.setInsecure();
+  bot.sendMessage("1085924901", "Secure System Activated", "Markdown");
+}
+
+//int status1,status2;
+
+void loop(){  
+  //if (millis() - tsLastTime > 1000){ 
+    if(mySerial.available()>1){
+      incomingByte=mySerial.readStringUntil('\n');
+      StringSplitter *splitter = new StringSplitter(incomingByte, ',',2); //manggil data serial arduino mega
+      Serial.print("DAT:");Serial.println(incomingByte);
+    
+      int itemCount = splitter->getItemCount();
+      for(int i = 0; i<itemCount; i++){
+        String item = splitter->getItemAtIndex(i);
+        buff[i] = splitter->getItemAtIndex(i);
+      }
+      if(buff[0]=="A"){
+      if(status1==1){
+        bot.sendMessage("1085924901","Pemberitahuan Akses dengan Tag ID yang benar");
+        //buff[0]=="";  
+        delay(10);
+        status1=0;
+      }
+      status2=1;
+    }
+    if(buff[0]=="B"){
+      if(status1==1){
+        bot.sendMessage("1085924901","Pemberitahuan Akses dengan Tag ID yang salah");
+        delay(10);
+        buff[0]=="";  
+        status1=0;
+      }
+      status2=1;
+    }
+    if(buff[0]=="C"){
+      if(status1==1){
+        bot.sendMessage("1085924901","Pemberitahuan Akses ada yang buka paksa");
+        //delay(10);
+        buff[0]=="";  
+        status1=0;
+      }
+      status2=1;
+    }
+    if(buff[0]=="D"){
+      if(status1==1){
+        bot.sendMessage("1085924901","Akses keluar rumah buka dan akan dikunci");
+        delay(10);
+        buff[0]=="";  
+        status1=0;
+      }
+      status2=1;
+    }
+    else{
+      if(status2==1){
+        Serial.println("Tidak Kirim Notif");
+        delay(10);
+        status2=0;
+      }
+      status1=1;  
+    }
+    } 
+}
+    
